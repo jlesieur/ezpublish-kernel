@@ -9,6 +9,7 @@
 
 namespace eZ\Publish\Core\Persistence\Legacy\Tests\Content;
 
+use eZ\Publish\SPI\FieldType\FieldStorageEvents\PostPublishFieldStorageEvent;
 use eZ\Publish\SPI\Persistence\Content\Type;
 use eZ\Publish\SPI\Persistence\Content;
 use eZ\Publish\SPI\Persistence\Content\ContentInfo;
@@ -821,6 +822,55 @@ class FieldHandlerTest extends LanguageAwareTestCase
     }
 
     /**
+     * Disabled as the mocks are driving me CRAZY. M.D.K.
+     */
+    public function noTestSendFieldStorageEvents()
+    {
+        // content with several fields
+        $content = $this->getContentFixture();
+        $event = new PostPublishFieldStorageEvent();
+
+        // The first field of our content has an event that modifies data, the others don't
+        $storageHandlerMock = $this->getStorageHandlerMock();
+        $i = 0;
+        foreach ( $content->fields as $field )
+        {
+            $returnValue = false;
+            if ( $i == 0 )
+            {
+                $returnValue = true;
+
+                // We mock the call to updateField that occurs on the first field
+                $mapperMock = $this->getMapperMock();
+                $mapperMock->expects( $this->exactly( 2 ) )
+                    ->method( 'convertToStorageValue' )
+                    ->with( $this->isInstanceOf( 'eZ\\Publish\\SPI\\Persistence\\Content\\Field' ) )
+                    ->will( $this->returnValue( new StorageFieldValue() ) );
+
+                $contentGatewayMock = $this->getContentGatewayMock();
+                $contentGatewayMock->expects( $this->once() )
+                    ->method( 'updateField' )
+                    ->with( $field, $mapperMock->convertToStorageValue( $field ) );
+
+                $storageHandlerMock->expects( $this->once() )
+                    ->method( 'storeFieldData' )
+                    ->with( $content->versionInfo, $field );
+            }
+
+            $sentEvent = clone $event;
+            $sentEvent->versionInfo = $content->versionInfo;
+            $sentEvent->field = $field;
+            $storageHandlerMock->expects( $this->at( $i++ ) )
+                ->method( 'sendEvent' )
+                ->with( $sentEvent )
+                ->will( $this->returnValue( $returnValue ) );
+            unset( $sentEvent );
+        }
+
+        $this->getFieldHandler()->sendFieldStorageEvents( $content, $event );
+    }
+
+    /**
      * Returns a Content fixture
      *
      * @return \eZ\Publish\SPI\Persistence\Content
@@ -1134,12 +1184,12 @@ class FieldHandlerTest extends LanguageAwareTestCase
             $this->fieldTypeRegistryMock->expects(
                 $this->any()
             )->method(
-                "getFieldType"
-            )->with(
-                $this->isType( "string" )
-            )->will(
-                $this->returnValue( $this->getFieldTypeMock() )
-            );
+                    "getFieldType"
+                )->with(
+                    $this->isType( "string" )
+                )->will(
+                    $this->returnValue( $this->getFieldTypeMock() )
+                );
         }
         return $this->fieldTypeRegistryMock;
     }
