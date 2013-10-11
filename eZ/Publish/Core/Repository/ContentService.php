@@ -1576,11 +1576,12 @@ class ContentService implements ContentServiceInterface
 
         $this->publishUrlAliasesForContent( $content );
 
-        $contentHandler->sendFieldStorageEvent(
+        $spiContent = $contentHandler->sendFieldStorageEvent(
             $versionInfo->getContentInfo()->id,
             $versionInfo->versionNo,
             new PostPublishFieldStorageEvent()
         );
+        $content = $this->domainMapper->buildContentDomainObject( $spiContent );
 
         return $content;
     }
