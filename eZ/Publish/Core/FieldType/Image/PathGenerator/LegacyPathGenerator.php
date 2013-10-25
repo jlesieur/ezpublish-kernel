@@ -56,8 +56,14 @@ class LegacyPathGenerator extends PathGenerator
         }
         else
         {
-            if ( $nodePathString && substr( $nodePathString, -1 ) != '/' )
-                $nodePathString .= '/';
+            /**
+             * @todo Remove when EZP-21861 is fixed.
+             *
+             * Should only be required for backports.
+             * Ensures that nodePathString doesn't have a leading slash and adds a trailing one if not empty
+             */
+            if ( $nodePathString != '' )
+                $nodePathString = trim( $nodePathString, '/' ) . '/';
 
             return sprintf(
                 '%s/%s%s-%s-%s',
