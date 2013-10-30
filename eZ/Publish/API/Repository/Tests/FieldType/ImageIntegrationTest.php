@@ -527,6 +527,107 @@ class ImageIntegrationTest extends FileBaseIntegrationTest
         $contentService->deleteContent( $updatedDraft->contentInfo );
     }
 
+    /**
+     * Creates an image content, publishes it, and creates a second version without changing the image
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Content
+     */
+    public function createContentWithNewVersion()
+    {
+        $repository = $this->getRepository();
+        $contentService = $repository->getContentService();
+
+        $type = $this->createContentType(
+            $this->getValidFieldSettings(),
+            $this->getValidValidatorConfiguration(),
+            array(),
+            // Causes a copy of the image value for each language in legacy
+            // storage
+            array( 'isTranslatable' => false )
+        );
+
+        // Create content with image in version 1
+        $version1Draft = $this->createContent( $this->getValidCreationFieldData(), $type );
+        $content = $contentService->publishVersion( $version1Draft->versionInfo );
+
+        // Update content to version 2  without changing the image
+        $version2Draft = $contentService->createContentDraft( $content->contentInfo );
+        $updateStruct = $contentService->newContentUpdateStruct();
+        $updateStruct->setField( 'name', __METHOD__ );
+        $updatedDraft = $contentService->updateContent( $version2Draft->versionInfo, $updateStruct );
+        $content = $contentService->publishVersion( $updatedDraft->versionInfo );
+
+        // Since the image wasn't changed, the URI in V2 must be the same as V1
+        self::assertEquals(
+            $this->testCreatedFieldType(
+                $contentService->loadContent( $content->id, null, 1 )
+            )->value->uri,
+            $this->testCreatedFieldType(
+                $contentService->loadContent( $content->id, null, 1 )
+            )->value->uri,
+            " image uri in version 2 is identical to version 1"
+        );
+
+        return $content;
+    }
+
+    /**
+     * Tests behaviour when an image content is edited without the image being changed
+     *
+     * @return \eZ\Publish\API\Repository\Values\Content\Content The content copy
+     */
+    public function testInherentCopyForNewVersion()
+    {
+        $contentService = $this->getRepository()->getContentService();
+
+        $content = $this->createContentWithNewVersion();
+
+        // copy this content to a new one
+        $contentCopy = $contentService->copyContent(
+            $content->contentInfo,
+            $this->getRepository()->getLocationService()->newLocationCreateStruct( 43 )
+        );
+
+        /*self::assertNotEquals(
+            $this->testCreatedFieldType( $content )->value->uri,
+            $this->testCreatedFieldType( $contentCopy )->value->uri,
+            " published image uri in content copy is different from the source object's"
+        );*/
+
+        return $contentCopy;
+    }
+
+    /**
+     * Tests that images referenced by version 1 of copied content aren't removed after deletion,
+     * since they're used by the original object
+     * @depends testInherentCopyForNewVersion
+     */
+    public function testDeleteCopiedContent()
+    {
+        $contentService = $this->getRepository()->getContentService();
+
+        $copyContent = $this->testInherentCopyForNewVersion();
+
+        $imageVersionOneUri = $this->testCreatedFieldType(
+            $contentService->loadContent( $copyContent->id, null, 1 )
+        )->value->uri;
+        $imageVersionTwoUri = $versionOneImageUri = $this->testCreatedFieldType(
+            $contentService->loadContent( $copyContent->id, null, 2 )
+        )->value->uri;
+
+        $contentService->deleteContent( $copyContent->contentInfo );
+
+        self::assertFileExists(
+            $imageVersionOneUri,
+            "image from version 1 was NOT deleted"
+        );
+
+        self::assertFileNotExists(
+            $imageVersionTwoUri,
+            "image from version 2 was deleted"
+        );
+    }
+
     public function providerForTestIsEmptyValue()
     {
         return array(

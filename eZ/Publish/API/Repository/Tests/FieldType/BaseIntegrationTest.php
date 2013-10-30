@@ -532,6 +532,7 @@ abstract class BaseIntegrationTest extends Tests\BaseTest
 
     /**
      * @depends testCreateContent
+     * @return Field The Field under test
      */
     public function testCreatedFieldType( $content )
     {
