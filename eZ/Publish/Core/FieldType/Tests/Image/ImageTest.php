@@ -7,7 +7,7 @@
  * @version //autogentag//
  */
 
-namespace eZ\Publish\Core\FieldType\Tests;
+namespace eZ\Publish\Core\FieldType\Tests\Image;
 
 use eZ\Publish\Core\FieldType\Image\Type as ImageType;
 use eZ\Publish\Core\FieldType\Image\Value as ImageValue;

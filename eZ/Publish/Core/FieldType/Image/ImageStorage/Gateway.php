@@ -34,16 +34,6 @@ abstract class Gateway extends StorageGateway
     abstract public function storeImageReference( $path, $fieldId );
 
     /**
-     * Returns a the XML content stored for the given $fieldIds
-     *
-     * @param int $versionNo
-     * @param array $fieldIds
-     *
-     * @return array
-     */
-    abstract public function getXmlForImages( $versionNo, array $fieldIds );
-
-    /**
      * Removes all references from $fieldId to a path that starts with $path
      *
      * @param string $path
@@ -55,12 +45,26 @@ abstract class Gateway extends StorageGateway
     abstract public function removeImageReferences( $path, $fieldId );
 
     /**
-     * Returns the number of recorded references to the given $path
+     * Returns the map of image files for $fieldIds
      *
-     * @param string $path
+     * @param VersionInfo $versionInfo
+     * @param array $fieldIds
      *
-     * @return int
+     * @return array An array of arrays of image path, indexed by field id
      */
-    abstract public function countImageReferences( $path );
+    abstract public function getImageFiles( VersionInfo $versionInfo, array $fieldIds );
+
+    /**
+     * Tells if $imagePath for $fieldId in $versionInfo can be deleted
+     *
+     * An image file can usually be deleted if it isn't needed by any other attribute
+     *
+     * @param mixed $fieldId
+     * @param VersionInfo $versionInfo
+     * @param string $imagePath
+     *
+     * @return bool
+     */
+    abstract public function imageFileCanBeDeleted( $fieldId, VersionInfo $versionInfo, $imagePath );
 }
 

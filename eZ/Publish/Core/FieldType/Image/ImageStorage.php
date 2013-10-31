@@ -201,44 +201,6 @@ class ImageStorage extends GatewayBasedStorage
         }
     }
 
-    public function deleteFieldData( VersionInfo $versionInfo, array $fieldIds, array $context )
-    {
-        /** @var \eZ\Publish\Core\FieldType\Image\ImageStorage\Gateway $gateway */
-        $gateway = $this->getGateway( $context );
-
-        $fieldXmls = $gateway->getXmlForImages( $versionInfo->versionNo, $fieldIds );
-
-        foreach ( $fieldXmls as $fieldId => $xml )
-        {
-            $storedFiles = $this->extractFiles( $xml );
-            if ( $storedFiles === null )
-            {
-                continue;
-            }
-
-            foreach ( $storedFiles as $storedFilePath )
-            {
-                $gateway->removeImageReferences( $storedFilePath, $versionInfo->versionNo, $fieldId );
-                if ( $gateway->countImageReferences( $storedFilePath ) === 0 )
-                {
-                    $binaryFileId = $this->IOService->getExternalPath( $storedFilePath );
-                    try
-                    {
-                        $binaryFile = $this->IOService->loadBinaryFile( $binaryFileId );
-                        $this->IOService->deleteBinaryFile( $binaryFile );
-                    }
-                    catch ( NotFoundException $e )
-                    {
-                        if ( isset( $this->logger ) )
-                        {
-                            $this->logger->error( "Image with id $storedFilePath not found" );
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     /**
      * Extracts the field storage path from  the given $xml string
      *
@@ -277,6 +239,34 @@ class ImageStorage extends GatewayBasedStorage
         }
 
         return null;
+    }
+
+    public function deleteFieldData( VersionInfo $versionInfo, array $fieldIds, array $context )
+    {
+        /** @var \eZ\Publish\Core\FieldType\Image\ImageStorage\Gateway $gateway */
+        $gateway = $this->getGateway( $context );
+
+        foreach ( $gateway->getImageFiles( $versionInfo, $fieldIds ) as $fieldId => $imagePath )
+        {
+            if ( $gateway->imageFileCanBeDeleted( $fieldId, $versionInfo, $imagePath ) )
+            {
+                try
+                {
+                    $this->IOService->deleteBinaryFile(
+                        $this->IOService->loadBinaryFile( $imagePath )
+                    );
+                }
+                catch ( NotFoundException $e )
+                {
+                    if ( isset( $this->logger ) )
+                    {
+                        $this->logger->error( "Image with ID {$imagePath} not found" );
+                    }
+                }
+            }
+
+            $gateway->removeImageReferences( $imagePath, $fieldId );
+        }
     }
 
     public function hasFieldData()
