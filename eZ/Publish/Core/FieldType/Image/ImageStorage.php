@@ -286,6 +286,9 @@ class ImageStorage extends GatewayBasedStorage
             return false;
 
         // If the path we currently have isn't the path to a draft, we have nothing to do
+        // Wrong, we do. We may be dealing with data from another content, which we need to publish...
+        // How do we distinguish that from data coming from another field & content ?
+        // Path reverse engineering ?
         if ( !$this->pathGenerator->isPathForDraft( $event->field->value->data['id'] ) )
             return false;
 
