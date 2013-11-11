@@ -462,7 +462,7 @@ class Handler implements SearchHandlerInterface
         $document[] = new Field(
             'object_state',
             $objectStateIds,
-            new FieldType\IdentifierField()
+            new FieldType\MultipleIdentifierField()
         );
 
         return $document;
