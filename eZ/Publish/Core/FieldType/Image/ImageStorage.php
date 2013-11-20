@@ -16,6 +16,10 @@ use eZ\Publish\Core\FieldType\GatewayBasedStorage;
 use eZ\Publish\Core\IO\MetadataHandler;
 use eZ\Publish\Core\Base\Exceptions\NotFoundException;
 use Psr\Log\LoggerInterface;
+use eZ\Publish\SPI\FieldType\Event as FieldTypeEvent;
+use eZ\Publish\SPI\FieldType\EventListener as FieldTypeEventListener;
+use eZ\Publish\SPI\FieldType\FieldStorageEvents\PostPublishFieldStorageEvent;
+use eZ\Publish\SPI\FieldType\FieldStorageEvent;
 
 /**
  * Converter for Image field type external storage
@@ -344,12 +348,20 @@ class ImageStorage extends GatewayBasedStorage
     }
 
     /**
+     * @param \eZ\Publish\SPI\Persistence\Content\VersionInfo $versionInfo
      * @param \eZ\Publish\SPI\Persistence\Content\Field $field
      * @param array $context
+     *
+     * @return \eZ\Publish\SPI\Persistence\Content\Search\Field[]|null
      */
     public function getIndexData( VersionInfo $versionInfo, Field $field, array $context )
     {
         // @todo: Correct?
         return null;
+    }
+
+    public function handleEvent( FieldStorageEvent $event, array $context )
+    {
+        return false;
     }
 }
