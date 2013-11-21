@@ -1196,14 +1196,11 @@ class FieldHandlerTest extends LanguageAwareTestCase
 
             $this->fieldTypeRegistryMock->expects(
                 $this->any()
-            )->method(
-                    "getFieldType"
-                )->with(
-                    $this->isType( "string" )
-                )->will(
-                    $this->returnValue( $this->getFieldTypeMock() )
-                );
+            )->method( "getFieldType" )
+                ->with( $this->isType( "string" ) )
+                ->will( $this->returnValue( $this->getFieldTypeMock() ) );
         }
+
         return $this->fieldTypeRegistryMock;
     }
 
