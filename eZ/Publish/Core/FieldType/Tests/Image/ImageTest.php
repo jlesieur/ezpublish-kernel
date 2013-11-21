@@ -21,7 +21,7 @@ class ImageTest extends FieldTypeTest
 {
     public function getImageInputPath()
     {
-        return __DIR__ . '/squirrel-developers.jpg';
+        return __DIR__ . '/_fixtures/squirrel-developers.jpg';
     }
 
     /**
