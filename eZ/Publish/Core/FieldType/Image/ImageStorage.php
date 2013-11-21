@@ -98,11 +98,11 @@ class ImageStorage extends GatewayBasedStorage
         // new image
         if ( isset( $field->value->externalData ) )
         {
-            $targetPath = $this->getFieldPath(
+            $targetPath = $this->pathGenerator->getStoragePathForField(
+                $versionInfo->status,
                 $field->id,
                 $versionInfo->versionNo,
-                $field->languageCode,
-                $this->getGateway( $context )->getNodePathString( $versionInfo, $field->id )
+                $field->languageCode
             ) . '/' . $field->value->externalData['fileName'];
 
             if ( $this->IOService->exists( $targetPath ) )
@@ -117,10 +117,7 @@ class ImageStorage extends GatewayBasedStorage
                 $binaryFileCreateStruct->id = $targetPath;
                 $binaryFile = $this->IOService->createBinaryFile( $binaryFileCreateStruct );
             }
-            else
-            {
-                $binaryFile = $this->IOService->loadBinaryFile( $targetPath );
-            }
+
             $field->value->externalData['mimeType'] = $binaryFile->mimeType;
             $field->value->externalData['imageId'] = $versionInfo->contentInfo->id . '-' . $field->id;
             $field->value->externalData['uri'] = $binaryFile->uri;
@@ -172,26 +169,6 @@ class ImageStorage extends GatewayBasedStorage
 
         // Data has been updated and needs to be stored!
         return true;
-    }
-
-    /**
-     * Returns the path where images for the defined $fieldId are stored
-     *
-     * @param mixed $fieldId
-     * @param int $versionNo
-     * @param string $languageCode
-     * @param string $nodePathString
-     *
-     * @return string
-     */
-    protected function getFieldPath( $fieldId, $versionNo, $languageCode, $nodePathString )
-    {
-        return $this->pathGenerator->getStoragePathForField(
-            $fieldId,
-            $versionNo,
-            $languageCode,
-            $nodePathString
-        );
     }
 
     public function getFieldData( VersionInfo $versionInfo, Field $field, array $context )
